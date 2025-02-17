@@ -2,6 +2,7 @@ package ru.hamming.service;
 
 import lombok.extern.log4j.Log4j;
 import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.*;
@@ -9,7 +10,13 @@ import ru.hamming.dto.MovieDto;
 import ru.hamming.entity.Movie;
 import ru.hamming.exception.MovieIsNotExistException;
 import ru.hamming.exception.MovieNotFoundException;
+import ru.hamming.tmdb.TmdbMovie;
+import ru.hamming.tmdb.TmdbResponse;
+
+import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 // отвечает за запрос к OMDB API и парсинг ответа
 @Service
@@ -44,7 +51,7 @@ public class MovieParserService {
 
             if (movieDto.isPresent()) {
                 // добавлена логика обработки успехных запросов, но с пустыми данными
-                Movie movie = convertDtoToMovie(movieDto.get());
+                Movie movie = convertToMovie(movieDto.get());
 //                movieRepository.save(movie);
                 movieService.saveMovie(movie);
                 return movie;
@@ -58,33 +65,22 @@ public class MovieParserService {
         }
     }
 
-//    // Запрос списка фильмов по году из API
-//    public List<Movie> fetchMoviesFromApiByYear(String year) {
-//        String url = "http://www.omdbapi.com/?y=" + year + "&apikey=" + apiKey;
-//        log.info("Запрос к API: " + url);
-//
-//        try {
-//            ResponseEntity<String> response = restTemplate.getForEntity(url, String.class);
-//            log.info("Ответ API: " + response.getBody());
-//
-//            if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
-//                MovieSearchResultByCategory result = new ObjectMapper().readValue(response.getBody(), MovieSearchResultByCategory.class);
-//                log.info("Найдено фильмов: " + result.getSearch().size());
-//
-//                return result.getSearch().stream()
-//                        .map(this::convertDtoToMovie)
-//                        .toList();
-//            } else {
-//                log.warn("API вернуло пустой список фильмов за " + year);
-//            }
-//        } catch (Exception e) {
-//            log.error("Ошибка при запросе к API: ", e);
-//        }
-//
-//        return List.of();
-//    }
+    // Метод для получения фильмов по году из TMDB API
+    public List<Movie> getMoviesByYear(String year) {
+        String url = getTMDbApiURL(year);
+        ResponseEntity<TmdbResponse> response = restTemplate.getForEntity(url, TmdbResponse.class);
+        // проверка на доступность API
+        if (isTMDbApiAvailable(response)) {
+            List<Movie> movies = response.getBody().getResults().stream()
+                    .map(this::convertToMovie)
+                    .collect(Collectors.toList());
 
-    // проверка на доступность к API
+            movieService.saveMoviesByYear(movies);
+            return movies;
+        }
+        return Collections.emptyList();
+    }
+    // проверка на доступность к OMDB API
     private boolean isApiAvailable(String url) {
         try {
             ResponseEntity<Void> response = restTemplate.exchange(url, HttpMethod.HEAD, null, Void.class);
@@ -102,6 +98,10 @@ public class MovieParserService {
         return false;
     }
 
+    private boolean isTMDbApiAvailable(ResponseEntity<TmdbResponse> response) {
+        return response.getStatusCode() == HttpStatus.OK && response.getBody() != null;
+    }
+
     // безопасное получение самого фильма по названию
     private Optional<MovieDto> fetchMovieFromApi(String title){
         try {
@@ -117,7 +117,11 @@ public class MovieParserService {
         return "http://www.omdbapi.com/?t=" + title + "&apikey=" + OMDBapiKey;
     }
 
-    private Movie convertDtoToMovie(MovieDto movieDto)  throws MovieIsNotExistException {
+    public String getTMDbApiURL(String year) {
+        return String.format("https://api.themoviedb.org/3/discover/movie?api_key=" + TMDBapiKey + "&primary_release_year=" + year);
+    }
+
+    private Movie convertToMovie(MovieDto movieDto)  throws MovieIsNotExistException {
         if (isExistMovieData(movieDto)) {
             log.error("API вернуло пустые данные");
             throw new MovieIsNotExistException("empty data");
@@ -131,11 +135,33 @@ public class MovieParserService {
                 .build();
     }
 
+    private Movie convertToMovie(TmdbMovie tmdbMovie) {
+        if (isExistMovieData(tmdbMovie)) {
+            log.error("API вернуло пустые данные");
+            throw new MovieIsNotExistException("empty data");
+        }
+        // TODO допилить дополнительная обработка для получения жанра и режиссера
+        return Movie.builder()
+                .title(tmdbMovie.getTitle())
+                .year(tmdbMovie.getReleaseDate().substring(0, 4))
+                .genre("временная заглушка")
+                .director("временная заглушка")
+                .plot(tmdbMovie.getOverview())
+                .build();
+    }
+
+    // проверка на содержание данных при успешном запросе к OMDB API
     private boolean isExistMovieData(MovieDto movieDto) {
         return movieDto.getTitle() == null || movieDto.getTitle().trim().isEmpty()
                 || movieDto.getDirector() == null || movieDto.getDirector().trim().isEmpty()
                 || movieDto.getGenre() == null || movieDto.getGenre().trim().isEmpty()
                 || movieDto.getYear() == null
                 || movieDto.getPlot() == null || movieDto.getPlot().trim().isEmpty();
+    }
+
+    // проверка на содержание данных при успешном запросе к tmdb API
+    private boolean isExistMovieData(TmdbMovie tmdbMovie) {
+        // TODO добавить более сложную логику на проверку пустоты содержимого контента
+        return tmdbMovie.getTitle() == null || tmdbMovie.getTitle().trim().isEmpty();
     }
 }

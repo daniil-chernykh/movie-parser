@@ -40,4 +40,10 @@ public class MovieService {
         log.info("Фильм успешно сохранен");
         return movieRepository.save(movie); // Сохраняем или обновляем фильм
     }
+
+    public List<Movie> saveMoviesByYear(List<Movie> movies) {
+        // TODO добавить правильную логику при сохранении в БД используя различные проверки
+        movieRepository.saveAll(movies);
+        return movies;
+    }
 }
