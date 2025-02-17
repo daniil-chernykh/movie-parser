@@ -19,7 +19,7 @@ public class MovieParserService {
     private final RestTemplate restTemplate;
     private MovieService movieService;
 
-    // ключ API из конфигурации приложения
+    // ключ API из конфигурации приложения.
     // TODO наладить что бы брался из зависимостей а не статически записывать
     private final String apiKey = "43734117";
 
