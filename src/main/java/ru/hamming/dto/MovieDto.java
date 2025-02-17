@@ -1,21 +1,12 @@
-package ru.hamming.entity;
+package ru.hamming.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import jakarta.persistence.*;
-import lombok.*;
+import lombok.Getter;
+import lombok.Setter;
 
-@Entity
-@Table(name = "movies")
 @Getter
 @Setter
-@Builder
-@NoArgsConstructor
-@AllArgsConstructor
-public class Movie {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
-
+public class MovieDto {
     @JsonProperty("Title")
     private String title;
     @JsonProperty("Year")
@@ -26,5 +17,4 @@ public class Movie {
     private String director;
     @JsonProperty("Plot")
     private String plot;
-
 }

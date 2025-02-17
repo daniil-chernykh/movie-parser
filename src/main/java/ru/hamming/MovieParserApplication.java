@@ -16,8 +16,5 @@ public class MovieParserApplication {
     public static void main(String[] args) {
 
         SpringApplication.run(MovieParserApplication.class,args);
-//        MovieParserService service = new MovieParserService(new RestTemplate());
-//        Movie movie = service.getMovieFromApi("anora");
-//        System.out.println(movie.getTitle() + " - " + movie.getYear());
     }
 }
