@@ -21,7 +21,8 @@ public class MovieParserService {
 
     // ключ API из конфигурации приложения.
     // TODO наладить что бы брался из зависимостей а не статически записывать
-    private final String apiKey = "43734117";
+    private final String OMDBapiKey = "43734117";
+    private final String TMDBapiKey = "760308d77de61db1c05055541511305b";
 
     public MovieParserService(RestTemplate restTemplate,MovieService movieService) {
         this.restTemplate = restTemplate;
@@ -113,7 +114,7 @@ public class MovieParserService {
     }
 
     private String getAPIUrl(String title) {
-        return "http://www.omdbapi.com/?t=" + title + "&apikey=" + apiKey;
+        return "http://www.omdbapi.com/?t=" + title + "&apikey=" + OMDBapiKey;
     }
 
     private Movie convertDtoToMovie(MovieDto movieDto)  throws MovieIsNotExistException {

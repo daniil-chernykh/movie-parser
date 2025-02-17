@@ -40,11 +40,4 @@ public class MovieService {
         log.info("Фильм успешно сохранен");
         return movieRepository.save(movie); // Сохраняем или обновляем фильм
     }
-
-    // ищем фильм по названию
-    public Movie getMovieByTitle(String title) {
-        return movieRepository.findByTitle(title); // Ищем фильм по названию
-    }
-
-
 }
