@@ -41,10 +41,9 @@ public class MovieService {
         return movieRepository.save(movie); // Сохраняем или обновляем фильм
     }
 
-    // ищем фильм по названию
-    public Movie getMovieByTitle(String title) {
-        return movieRepository.findByTitle(title); // Ищем фильм по названию
+    public List<Movie> saveMoviesByYear(List<Movie> movies) {
+        // TODO добавить правильную логику при сохранении в БД используя различные проверки
+        movieRepository.saveAll(movies);
+        return movies;
     }
-
-
 }
